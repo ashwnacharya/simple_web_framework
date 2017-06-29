@@ -1,4 +1,4 @@
-import re
+import re, traceback
 
 class wsgiapp:
     """Base class for my wsgi application."""
@@ -13,8 +13,13 @@ class wsgiapp:
         self._headers.append((header_name, header_value))
 
     def __iter__(self):
-        x = self.delegate()
-        self.start(self.status, self._headers)
+        try:
+            x = self.delegate()
+            self.start(self.status, self._headers)
+        except:
+            headers = [("Content-Type", "text/plain")]
+            self.start("500 Internal Error", headers)
+            x = "Internal Error:\n\n" + traceback.format_exc()
 
         # return value can be a string or a list. 
         # we should be able to return an iter in both the cases.
@@ -40,7 +45,8 @@ class wsgiapp:
 class application(wsgiapp):
     urls = [
         ("/", "index"),
-        ("/hello/(.*)", "hello")
+        ("/hello/(.*)", "hello"),
+        ("/err", "error")
     ]
 
     def GET_index(self):
@@ -50,6 +56,9 @@ class application(wsgiapp):
     def GET_hello(self, name):
         self.header('Content-type', 'text/plain')
         return "Hello %s!\n" % name
+
+    def GET_error(self):
+        raise Exception("this is an error")
 
     def notfound(self):
         self.status = '404 Not Found'
