@@ -1,14 +1,10 @@
 import re
 
-class application:
+class wsgiapp:
+    """Base class for my wsgi application."""
     def __init__(self, environ, start_response):
         self.environ = environ
         self.start = start_response
-    
-    urls = [
-        ("/", "index"),
-        ("/hello/(.*)", "hello")
-    ]
 
     def __iter__(self):
             return self.delegate()
@@ -26,6 +22,12 @@ class application:
                 func = getattr(self, funcname)
                 return func(*args)
         return self.notfound()
+
+class application(wsgiapp):
+    urls = [
+        ("/", "index"),
+        ("/hello/(.*)", "hello")
+    ]
 
     def GET_index(self):
         status = '200 OK'
