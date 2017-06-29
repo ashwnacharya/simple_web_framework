@@ -11,6 +11,9 @@ class application:
     ]
 
     def __iter__(self):
+            return self.delegate()
+        
+    def delegate(self):
         path = self.environ['PATH_INFO']
         method = self.environ['REQUEST_METHOD']
 
@@ -22,7 +25,6 @@ class application:
                 funcname = method.upper() + "_" + name
                 func = getattr(self, funcname)
                 return func(*args)
-
         return self.notfound()
 
     def GET_index(self):
