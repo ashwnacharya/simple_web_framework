@@ -2,13 +2,27 @@ import re
 
 class wsgiapp:
     """Base class for my wsgi application."""
+
     def __init__(self, environ, start_response):
         self.environ = environ
         self.start = start_response
+        self.status = "200 OK"
+        self._headers = []
+
+    def header(self, header_name, header_value):
+        self._headers.append((header_name, header_value))
 
     def __iter__(self):
-            return self.delegate()
-        
+        x = self.delegate()
+        self.start(self.status, self._headers)
+
+        # return value can be a string or a list. 
+        # we should be able to return an iter in both the cases.
+        if isinstance(x, str):
+            return iter([x])
+        else:
+            return iter(x)
+
     def delegate(self):
         path = self.environ['PATH_INFO']
         method = self.environ['REQUEST_METHOD']
@@ -30,22 +44,17 @@ class application(wsgiapp):
     ]
 
     def GET_index(self):
-        status = '200 OK'
-        response_headers = [('Content-type', 'text/plain')]
-        self.start(status, response_headers)
-        yield "Welcome!\n"
+        self.header('Content-type', 'text/plain')
+        return "Welcome!\n"
 
     def GET_hello(self, name):
-        status = '200 OK'
-        response_headers = [('Content-type', 'text/plain')]
-        self.start(status, response_headers)
-        yield "Hello %s!\n" % name
+        self.header('Content-type', 'text/plain')
+        return "Hello %s!\n" % name
 
     def notfound(self):
-        status = '404 Not Found'
-        response_headers = [('Content-type', 'text/plain')]
-        self.start(status, response_headers)
-        yield "Not Found\n"
+        self.status = '404 Not Found'
+        self.header('Content-type', 'text/plain')
+        return "Not Found\n"
 
 if __name__ == '__main__':
     from wsgiref.simple_server import make_server
